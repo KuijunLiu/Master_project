@@ -8,18 +8,18 @@ Lx = 5000
 Ly = 4330
 mesh = PeriodicRectangleMesh(n, n,Lx,Ly)
 
-CR = FunctionSpace(mesh, "RT", 1) # BDM 1 or RT 1 
+RT = FunctionSpace(mesh, "RT", 1) # BDM 1 or RT 1 
 DG = FunctionSpace(mesh, "DG", 0) 
 
 
-W = CR*DG*CR # Mixed space for velocity and depth (nonlinear F_h) CR*CR*DG
+W = RT*DG*RT # Mixed space for velocity and depth (nonlinear F_h) CR*CR*DG
 u,h,F = TrialFunctions(W) #u,h,f
 p,q,tF = TestFunctions(W)  #p,q,p_2
 
 
 u_0 = pi 
 h_0 = 10.5    #initial condition
-u_n = Function(CR).assign(u_0)
+u_n = Function(RT).assign(u_0)
 h_n = Function(DG).assign(h_0) #fields at time step n
 
 def vortex_single_elevation_pos(x,y,H,DeltaH,Lx,Ly):
@@ -40,8 +40,8 @@ def vortex_single_elevation_pos(x,y,H,DeltaH,Lx,Ly):
     return h
 
 
-Lx   = 5000 # in km                           # Zonal length
-Ly   = 4330 # in km                           # Meridonal length
+Lx = 5000 # in km                           # Zonal length
+Ly = 4330 # in km                           # Meridonal length
 
 H       = 10 # in km
 DeltaH  = 0.075
@@ -57,8 +57,8 @@ x = SpatialCoordinate(mesh) # define (x[0], x[1])
 Dn0 = Function(DG).interpolate(vortex_single_elevation_pos(x[0],x[1],H,DeltaH,Lx,Ly))
 h_n.assign(Dn0)
 
-h_h=0.5*(h+h_n)
-u_h=0.5*(u+u_n)
+h_h = 0.5*(h+h_n)
+u_h = 0.5*(u+u_n)
 dt = 1/50
 alpha = Constant(0.5)
 uh_eqn = ((inner(p, u-u_n) - alpha*dt*g*div(p)*h_h
@@ -71,19 +71,18 @@ wn1 = Function(W) # mixed func. for both fields (n+1)
 un1, hn1, fn1 = wn1.split() # Split func. for individual fields
 
 
-uh_problem = LinearVariationalProblem(lhs(uh_eqn),rhs(uh_eqn), wn1)
+uh_problem = NonlinearVariationalProblem(uh_eqn, wn1)
 params = {'mat_type': 'aij',
  'ksp_type': 'preonly',
- 'pc_type': 'lu',
- 'pc_factor_mat_solver_type': 'mumps'}
-uh_solver = LinearVariationalSolver(uh_problem,
+ 'pc_type': 'lu'}
+uh_solver = NonlinearVariationalSolver(uh_problem,
  solver_parameters=params)
 uh_solver.solve()
 
 
-u_out = Function(CR, name="Velocity").assign(u_n)
+u_out = Function(RT, name="Velocity").assign(u_n)
 h_out = Function(DG, name="Depth").assign(h_n)
-outfile = File("LSW.pvd")
+outfile = File("nLSW.pvd")
 outfile2 = File("h.pvd")
 outfile2.write(h_out)
 
