@@ -13,7 +13,7 @@ DG = FunctionSpace(mesh, "DG", 0)
 
 W = CR * DG * CR  # Mixed space for velocity and depth (nonlinear F_h) CR*CR*DG
 u, h, F = TrialFunctions(W)  # u,h,f
-p, q, tF = TestFunctions(W)  # p,q,p_2
+p, q, tF = TestFunctions(W)  
 
 u_0 = 0
 h_0 = 10.5  # initial condition
