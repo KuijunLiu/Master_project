@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from split_initializations import *
 
 H = 10
-Dt = 0.001
+Dt = 0.0005
 dt = Constant(Dt)
 
 n = 50
@@ -21,8 +21,8 @@ x = SpatialCoordinate(mesh)  # define (x[0], x[1])
 ## 1) vortex pair interaction:
 # ~ Dn0 = Function(VD).interpolate(vortex_pair_elevation(x[0],x[1],H,DeltaH,Lx,Ly))
 # ~ hn0 = Function(Vh).project(Dn0)
-hn0 = Function(CG).interpolate(vortex_pair_elevation(x[0],x[1],H,DeltaH,Lx,Ly))
-Dn0 = Function(DG).project(hn0)
+# hn0 = Function(CG).interpolate(vortex_pair_elevation(x[0],x[1],H,DeltaH,Lx,Ly))
+# Dn0 = Function(DG).project(hn0)
 
 ## 2) shear flow:
 # hn0 = Function(Vh).interpolate(shear_elevation(x[0],x[1],H,DeltaH,Lx,Ly))
@@ -33,14 +33,13 @@ Dn0 = Function(DG).project(hn0)
 ## 3) single vortex tc:
 #Dn0 = Function(DG).interpolate(vortex_single_elevation_pos(x[0], x[1], H, DeltaH, Lx, Ly))
 #hn0 = Function(CG).project(Dn0)
-# ~ hn0 = Function(Vh).interpolate(vortex_single_elevation_pos(x[0],x[1],H,DeltaH,Lx,Ly)) 
-# ~ Dn0 = Function(VD).project(hn0)
+hn0 = Function(CG).interpolate(vortex_single_elevation_pos(x[0],x[1],H,DeltaH,Lx,Ly))
+Dn0 = Function(DG).project(hn0)
 #Dn0 = Function(VD).interpolate(vortex_single_elevation_pos(x[0],x[1],H,DeltaH,Lx,Ly))
 #hn0 = Function(Vh).project(Dn0)
 un0 = project(perp(grad(hn0)), RT)
-un0 *= g/f
-
-
+un0 *= 0
+# un0 *= g/f
 
 
 
@@ -120,18 +119,20 @@ def dump():
         dumpcount -= dumpfreq
 
 
-#dump()
+dump()
 
 while t < tmax / Dt - dt1 / 2:
     t += dt1
     print("t= ", t * Dt)   
     uh_solver0.solve()
-    U.assign(U + dU)
-    # uh_solver1.solve()
-    # U2.assign(0.75*U + 0.25*(U1 + dU))
-    # uh_solver2.solve()
-    # U.assign((1.0/3.0)*U + (2.0/3.0)*(U2 + dU))
-    ufile.write(u, D, time=t)
+    U1.assign(U + dU)
+    uh_solver1.solve()
+    U2.assign(0.75*U + 0.25*(U1 + dU))
+    uh_solver2.solve()
+    U.assign((1.0/3.0)*U + (2.0/3.0)*(U2 + dU))
+    # ufile.write(u, D, time=t)
+    dump()
+
     e_tot_t = assemble(0.5 * inner(u, D * u) * dx + 0.5 * g * (D ** 2) * dx)
     all_e_tot.append(e_tot_t / e_tot_0 - 1)
     #ens_t = assemble(q**2 * D * dx)
