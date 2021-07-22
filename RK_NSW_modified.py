@@ -50,33 +50,49 @@ U = Function(W)
 u, D, q, F = U.split()
 D.assign(Dn0)
 u.project(un0)
+# define test functions!
+v, phi, r, tF = TestFunctions(W)
 
 # define time derivative
 dU = Function(W)
 du, dh, q, F = split(dU)
 
-# define test functions!
-v, phi, r, tF = TestFunctions(W)
 
-uh_eqn1 = (inner(v, dt * du) * dx + dt * inner(v , q * perp(F)) * dx #change q_h and F_h to q_n and F_n
-          - dt * div(v) * (g * D + 0.5 * u**2) * dx 
-          + phi * dt * dh * dx 
-          + dt * phi * div(F) * dx   #dot(,)       
-          + inner(tF, F - D * u) * dx
-          + inner(r, q * D - f) * dx + inner(perp(grad(r)) , u) * dx
-          ) 
- 
+# uh_eqn1 = (inner(v, u) * dx + dt * inner(v , q * perp(F)) * dx #change q_h and F_h to q_n and F_n
+#           - dt * div(v) * (g * D + 0.5 * u**2) * dx
+#           + phi * dh * dx
+#           + dt * phi * div(F) * dx   #dot(,)
+#           + inner(tF, F - D * u) * dx
+#           + inner(r, q * D - f) * dx + inner(perp(grad(r)) , u) * dx
+#           )
+
+
+def form_mass(u, v, h, phi):
+    return inner(v, u) * dx + phi * h * dx
+
+def form_function(u, v, D, phi, dt):
+    return dt*(
+            inner(v , q * perp(F)) * dx
+            - dt * div(v) * (g * D + 0.5 * inner(u, u)) * dx
+            + dt * phi * div(F) * dx
+            + inner(tF, F - D * u) * dx
+            + inner(r, q * D - f) * dx + inner(perp(grad(r)) , u) * dx
+    )
+
+
+a = form_mass(u, v, )
+
 U1 = Function(W)
 u1, D1, q1, F1 = split(U1)
-U2 = Function(W)  
-u2, D2, q2, F2 = split(U2) 
-uh_eqn2 = replace(uh_eqn1, {u:u1, D:D1, q:q1, F:F1})  
-uh_eqn3 = replace(uh_eqn2, {u:u2, D:D2, q:q2, F:F2})     
-          
+U2 = Function(W)
+u2, D2, q2, F2 = split(U2)
+uh_eqn2 = replace(uh_eqn1, {u:u1, D:D1, q:q1, F:F1})
+uh_eqn3 = replace(uh_eqn2, {u:u2, D:D2, q:q2, F:F2})
+
 params = {'mat_type': 'aij',
           'ksp_type': 'preonly',
           'pc_type': 'lu'}
-uh_problem1 = NonlinearVariationalProblem(uh_eqn1, dU)
+uh_problem1 = NonlinearVariationalProblem(a, uh_eqn1, dU)
 uh_solver1 = NonlinearVariationalSolver(uh_problem1,
                                        solver_parameters=params)
 uh_problem2 = NonlinearVariationalProblem(uh_eqn2, dU)
@@ -126,7 +142,7 @@ def dump():
 
 while t < tmax / Dt - dt1 / 2:
     t += dt1
-    print("t= ", t * Dt)   
+    print("t= ", t * Dt)
     uh_solver1.solve()
     U1.assign(U + dU)
     uh_solver2.solve()
@@ -140,7 +156,7 @@ while t < tmax / Dt - dt1 / 2:
     all_ens.append(ens_t/ens_0 - 1)
     print(e_tot_t / e_tot_0 - 1, 'Energy')
     print(ens_t / ens_0 - 1, 'Enstrophy')
-    
+
 
 fig1 = plt.plot(all_e_tot)
 plt.show()
