@@ -43,6 +43,7 @@ un0 *= 0
 
 
 
+
 # Define weak problem:
 W = RT * DG   # Mixed space for velocity and depth
 
@@ -55,7 +56,6 @@ u.project(un0)
 dU_trial = TrialFunction(W)
 du_trial, dh_trial = split(dU_trial)
 dU = Function(W)
-
 
 
 # define test functions!
@@ -130,9 +130,7 @@ while t < tmax / Dt - dt1 / 2:
     U2.assign(0.75*U + 0.25*(U1 + dU))
     uh_solver2.solve()
     U.assign((1.0/3.0)*U + (2.0/3.0)*(U2 + dU))
-    # ufile.write(u, D, time=t)
     dump()
-
     e_tot_t = assemble(0.5 * inner(u, D * u) * dx + 0.5 * g * (D ** 2) * dx)
     all_e_tot.append(e_tot_t / e_tot_0 - 1)
     #ens_t = assemble(q**2 * D * dx)
