@@ -38,8 +38,8 @@ Dn0 = Function(DG).project(hn0)
 #Dn0 = Function(VD).interpolate(vortex_single_elevation_pos(x[0],x[1],H,DeltaH,Lx,Ly))
 #hn0 = Function(Vh).project(Dn0)
 un0 = project(perp(grad(hn0)), RT)
-un0 *= 0
-# un0 *= g/f
+# un0 *= 0
+un0 *= g/f
 
 
 
@@ -72,6 +72,7 @@ def mass_function(du, dh):
     
 def form_function(u, D):
     rhs = dt * g * D * div(v) * dx - dt * H * phi * div(u) * dx
+    -1 * dt * inner(v , f * perp(u)) * dx
     return rhs  
 
 lhs = mass_function(du_trial, dh_trial)
@@ -95,11 +96,12 @@ uh_problem2 = LinearVariationalProblem(lhs, rhs2, dU)
 uh_solver2 = LinearVariationalSolver(uh_problem2,
                                        solver_parameters=params)
 
+q = (f - div(perp(u))) / D
 
 e_tot_0 = assemble(0.5 * inner(u**2, D) * dx + 0.5 * g * (D ** 2) * dx)  # define total energy at each step
 all_e_tot = []
-#ens_0 = assemble(q**2 * D * dx)  # define enstrophy at each time step
-#all_ens = []
+ens_0 = assemble(q**2 * D * dx)  # define enstrophy at each time step
+all_ens = []
 
 name = "lsw_rk"
 ufile = File("output/" + name + ".pvd")
@@ -130,16 +132,17 @@ while t < tmax / Dt - dt1 / 2:
     U2.assign(0.75*U + 0.25*(U1 + dU))
     uh_solver2.solve()
     U.assign((1.0/3.0)*U + (2.0/3.0)*(U2 + dU))
+    q = (f - div(perp(u))) / D
     dump()
     e_tot_t = assemble(0.5 * inner(u, D * u) * dx + 0.5 * g * (D ** 2) * dx)
     all_e_tot.append(e_tot_t / e_tot_0 - 1)
-    #ens_t = assemble(q**2 * D * dx)
-    #all_ens.append(ens_t/ens_0 - 1)
+    ens_t = assemble(q**2 * D * dx)
+    all_ens.append(ens_t/ens_0 - 1)
     print(e_tot_t / e_tot_0 - 1, 'Energy')
-    #print(ens_t / ens_0 - 1, 'Enstrophy')
+    print(ens_t / ens_0 - 1, 'Enstrophy')
     
 
 fig1 = plt.plot(all_e_tot)
 plt.show()
-#fig2 = plt.plot(all_ens)
-#plt.show()
+fig2 = plt.plot(all_ens)
+plt.show()
