@@ -33,15 +33,18 @@ x = SpatialCoordinate(mesh)  # define (x[0], x[1])
 ## 3) single vortex tc:
 #Dn0 = Function(DG).interpolate(vortex_single_elevation_pos(x[0], x[1], H, DeltaH, Lx, Ly))
 #hn0 = Function(CG).project(Dn0)
-hn0 = Function(CG).interpolate(vortex_single_elevation_pos(x[0],x[1],H,DeltaH,Lx,Ly))
+hn0 = Function(CG).interpolate(vortex_single_elevation(x[0],x[1],H,DeltaH,Lx,Ly))
 Dn0 = Function(DG).project(hn0)
 #Dn0 = Function(VD).interpolate(vortex_single_elevation_pos(x[0],x[1],H,DeltaH,Lx,Ly))
 #hn0 = Function(Vh).project(Dn0)
 un0 = project(perp(grad(hn0)), RT)
 # un0 *= 0
 un0 *= g/f
-
-
+# print(f)
+# print(g)
+# trisurf(Dn0)
+# quiver(un0)
+# plt.show()
 
 
 # Define weak problem:
@@ -50,7 +53,7 @@ W = RT * DG   # Mixed space for velocity and depth
 U = Function(W) # U = TrialFunctions(W)
 u, D = U.split()
 D.assign(Dn0)
-u.project(un0)
+u.assign(un0)
 
 # define velocity and depth increment
 dU_trial = TrialFunction(W)
@@ -71,8 +74,9 @@ def mass_function(du, dh):
     return lhs
     
 def form_function(u, D):
-    rhs = dt * g * D * div(v) * dx - dt * H * phi * div(u) * dx
-    -1 * dt * inner(v , f * perp(u)) * dx
+    rhs = (dt * g * D * div(v) * dx 
+    - dt * H * phi * div(u) * dx
+    - dt * inner(v , f * perp(u)) * dx)
     return rhs  
 
 lhs = mass_function(du_trial, dh_trial)
@@ -97,6 +101,9 @@ uh_solver2 = LinearVariationalSolver(uh_problem2,
                                        solver_parameters=params)
 
 q = (f - div(perp(u))) / D
+q_out = Function(CG, name="Vorticity").project(q)
+u.rename("Velocity")
+D.rename("Depth")
 
 e_tot_0 = assemble(0.5 * inner(u**2, D) * dx + 0.5 * g * (D ** 2) * dx)  # define total energy at each step
 all_e_tot = []
@@ -117,7 +124,7 @@ def dump():
     global dumpcount
     dumpcount += 1
     if (dumpcount > dumpfreq):
-        ufile.write(u, D, time=t)
+        ufile.write(u, D, q_out, time=t)
         dumpcount -= dumpfreq
 
 
