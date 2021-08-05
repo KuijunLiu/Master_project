@@ -11,7 +11,7 @@ Lx = 5000  # in km                           # Zonal length
 Ly = 4330  # in km                           # Meridonal length
 
 mesh = PeriodicRectangleMesh(n, n, Lx, Ly)
-RT = FunctionSpace(mesh, "RT", 1)  # BDM 1 or RT 1
+CR = VectorFunctionSpace(mesh, "CR", 1)  # BDM 1 or RT 1
 DG = FunctionSpace(mesh, "DG", 0)
 CG = FunctionSpace(mesh, "CG", 1)
 
@@ -37,7 +37,7 @@ hn0 = Function(CG).interpolate(vortex_single_elevation(x[0],x[1],H,DeltaH,Lx,Ly)
 Dn0 = Function(DG).project(hn0)
 #Dn0 = Function(VD).interpolate(vortex_single_elevation_pos(x[0],x[1],H,DeltaH,Lx,Ly))
 #hn0 = Function(Vh).project(Dn0)
-un0 = project(perp(grad(hn0)), RT)
+un0 = project(perp(grad(hn0)), CR)
 # un0 *= 0
 un0 *= g/f
 # print(f)
@@ -48,7 +48,7 @@ un0 *= g/f
 
 
 # Define weak problem:
-W = RT * DG   # Mixed space for velocity and depth
+W = CR * DG   # Mixed space for velocity and depth
 
 U = Function(W) # U = TrialFunctions(W)
 u, D = U.split()
