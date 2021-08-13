@@ -104,28 +104,33 @@ uh_solver2 = LinearVariationalSolver(uh_problem2,
                                        solver_parameters=params)
 
 #def projection problem here
-W1 = BDM
-u_trial = TrialFunction(W1)
-v2 = TestFunction(W1)
-u_hat = Function(W1)
+u_trial = TrialFunction(BDM)
+v2 = TestFunction(BDM)
+u_hat = Function(BDM)
 
 
-eqn1 = inner(v2 , n_vec) * inner(u_trial , n_vec) * dS
+# eqn1 = (jump(v2 , n_vec) * jump(u_trial , n_vec)) * dS
+# eqn1 = (inner(v2('+'), n_vec('+')) + inner(v2('-'), n_vec('-'))) * avg(inner(u_trial, n_vec)) * dS
+eqn1 = avg(inner(v2 , n_vec) * inner(u_trial , n_vec)) * dS
+# eqn1 = avg(inner(v2 , n_vec)) * jump(u_trial , n_vec) * dS
 
-# eqn2 = inner(v2, n_vec) * (u())
-eqn2 = 0.5 * (dot(v2 , n_vec) * inner(u('+') , n_vec('+')) * dS + dot(v2 , n_vec) * inner(u('-') , n_vec('-')) * dS) 
+# eqn2 = avg(inner(v2 , n_vec)) * (inner(u('+'), n_vec('+')) + inner(u('-'), n_vec('-'))) * dS
+# eqn2 = (jump(v2 , n_vec)) * jump(u , n_vec) * dS
+eqn2 = avg(inner(v2 , n_vec) * inner(u , n_vec)) * dS
+# eqn2 = avg(inner(v2 , n_vec)) * jump(u , n_vec) * dS
 
 
-problem = LinearVariationalProblem(eqn1, eqn2, u_hat)
-solver = LinearVariationalSolver(problem,
+proj_problem = LinearVariationalProblem(eqn1, eqn2, u_hat)
+proj_solver = LinearVariationalSolver(proj_problem,
                                        solver_parameters=params)
 
-q = (f - div(perp(u))) / D
+
+q = (f - div(perp(u_hat))) / D
 q_out = Function(CG, name="Vorticity").project(q)
-u.rename("Velocity")
+u_hat.rename("Velocity")
 D.rename("Depth")
 
-e_tot_0 = assemble(0.5 * inner(u**2, D) * dx + 0.5 * g * (D ** 2) * dx)  # define total energy at each step
+e_tot_0 = assemble(0.5 * inner(u_hat**2, D) * dx + 0.5 * g * (D ** 2) * dx)  # define total energy at each step
 all_e_tot = []
 ens_0 = assemble(q**2 * D * dx)  # define enstrophy at each time step
 all_ens = []
@@ -144,7 +149,7 @@ def dump():
     global dumpcount
     dumpcount += 1
     if (dumpcount > dumpfreq):
-        ufile.write(u, D, q_out, time=t)
+        ufile.write(u_hat, D, q_out, time=t)
         dumpcount -= dumpfreq
 
 
@@ -159,7 +164,7 @@ while t < tmax / Dt - dt1 / 2:
     U2.assign(0.75*U + 0.25*(U1 + dU))
     uh_solver2.solve()
     U.assign((1.0/3.0)*U + (2.0/3.0)*(U2 + dU))
-    solver.solve()
+    proj_solver.solve()
     q = (f - div(perp(u))) / D
     dump()
     e_tot_t = assemble(0.5 * inner(u, D * u) * dx + 0.5 * g * (D ** 2) * dx)
