@@ -185,9 +185,8 @@ dump()
 while t < tmax / Dt - dt1 / 2:
     t += dt1
     print("t= ", t * Dt)  
-    proj_u = proj_solver.solve() 
-    # r_hat = r_solver.solve()
-    r_hat = rSolver(proj_u)
+    proj_solver.solve() 
+    r_solver.solve()
     uh_solver0.solve()
     U1.assign(U + dU)
     uh_solver1.solve()
