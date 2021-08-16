@@ -70,32 +70,35 @@ proj_problem = LinearVariationalProblem(eqn1, eqn2, u_hat)
 params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
 proj_solver = LinearVariationalSolver(proj_problem,
                                        solver_parameters=params)
-proj_u = proj_solver.solve()
+proj_solver.solve()
 
 # from IPython import embed; embed()
 
 #define a solver for r here
-def rSolver(u):
-    r_trial = TrialFunction(BDM)
-    v3 = TestFunction(BDM)
-    r = Function(BDM)
-    eqn3 = avg(inner(v3, n_vec) * inner(r_trial, n_vec)) * dS
-    eqn4 = inner(v3, f * perp(u)) * dx
-    params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
-    r_problem = LinearVariationalProblem(eqn3, eqn4, r)
-    r_solver = LinearVariationalSolver(r_problem,
-                                       solver_parameters=params)
-    r_solver.solve()
-    return r
-# r_trial = TrialFunction(BDM)
-# v3 = TestFunction(BDM)
-# r = Function(BDM)
-# eqn3 = avg(inner(v3, n_vec) * inner(r_trial, n_vec)) * dS
-# eqn4 = inner(v3, f * perp(proj_u)) * dx
-# params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
-# r_problem = LinearVariationalProblem(eqn3, eqn4, r)
-# r_solver = LinearVariationalSolver(r_problem,
-#                                     solver_parameters=params)
+# def rSolver(u):
+#     r_trial = TrialFunction(BDM)
+#     v3 = TestFunction(BDM)
+#     r = Function(BDM)
+#     eqn3 = avg(inner(v3, n_vec) * inner(r_trial, n_vec)) * dS
+#     eqn4 = inner(v3, f * perp(u)) * dx
+#     params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
+#     r_problem = LinearVariationalProblem(eqn3, eqn4, r)
+#     r_solver = LinearVariationalSolver(r_problem,
+#                                        solver_parameters=params)
+#     r_solver.solve()
+#     return r
+
+r_trial = TrialFunction(BDM)
+v3 = TestFunction(BDM)
+r = Function(BDM)
+eqn3 = avg(inner(v3, n_vec) * inner(r_trial, n_vec)) * dS
+
+# from IPython import embed; embed()
+eqn4 = inner(v3, f * perp(u_hat)) * dx
+params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
+r_problem = LinearVariationalProblem(eqn3, eqn4, r)
+r_solver = LinearVariationalSolver(r_problem,
+                                    solver_parameters=params)
 # r_hat = r_solver.solve()
 
 
@@ -118,10 +121,10 @@ def mass_function(du, dh):
     
 def form_function(u, D):
     # proj_u = proj(u)
-    r = rSolver(proj_u)
+    r_solver.solve()
     rhs = (dt * g * D * div(v) * dx 
     - dt * H * phi * div(u) * dx
-    - dt * avg(inner(r_hat, n_vec)) * inner(v, n_vec) * dS)
+    - dt * avg(inner(r, n_vec)) * inner(v, n_vec) * dS)
     return rhs  
 
 # from IPython import embed; embed()
