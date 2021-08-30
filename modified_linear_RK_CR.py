@@ -43,6 +43,7 @@ Dn0 = Function(DG).project(hn0)
 un0 = project(perp(grad(hn0)), CR)
 # un0 *= 0
 un0 *= g/f
+un0 *= 0.5 
 # print(f)
 # print(g)
 # trisurf(Dn0)
@@ -74,19 +75,6 @@ proj_solver.solve()
 
 # from IPython import embed; embed()
 
-#define a solver for r here
-# def rSolver(u):
-#     r_trial = TrialFunction(BDM)
-#     v3 = TestFunction(BDM)
-#     r = Function(BDM)
-#     eqn3 = avg(inner(v3, n_vec) * inner(r_trial, n_vec)) * dS
-#     eqn4 = inner(v3, f * perp(u)) * dx
-#     params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
-#     r_problem = LinearVariationalProblem(eqn3, eqn4, r)
-#     r_solver = LinearVariationalSolver(r_problem,
-#                                        solver_parameters=params)
-#     r_solver.solve()
-#     return r
 
 r_trial = TrialFunction(BDM)
 v3 = TestFunction(BDM)
@@ -100,7 +88,7 @@ r_problem = LinearVariationalProblem(eqn3, eqn4, r)
 r_solver = LinearVariationalSolver(r_problem,
                                     solver_parameters=params)
 # r_hat = r_solver.solve()
-
+r_solver.solve()
 
 # define velocity and depth increment
 dU_trial = TrialFunction(W)
@@ -115,16 +103,17 @@ u1, D1 = split(U1)
 U2 = Function(W)  
 u2, D2 = split(U2) 
 
+
 def mass_function(du, dh):
     lhs = inner(v, du) * dx + phi * dh * dx
     return lhs
     
 def form_function(u, D):
     # proj_u = proj(u)
-    r_solver.solve()
+    # r_solver.solve()
     rhs = (dt * g * D * div(v) * dx 
     - dt * H * phi * div(u) * dx
-    - dt * avg(inner(r, n_vec)) * inner(v, n_vec) * dS)
+    - dt * avg(inner(r, n_vec) * inner(v, n_vec)) * dS)
     return rhs  
 
 # from IPython import embed; embed()
