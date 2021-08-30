@@ -12,6 +12,7 @@ Ly = 4330  # in km                           # Meridonal length
 
 mesh = PeriodicRectangleMesh(n, n, Lx, Ly)
 CR = VectorFunctionSpace(mesh, "CR", 1)  # BDM 1 or RT 1
+BDM = FunctionSpace(mesh, "BDM", 1)
 DG = FunctionSpace(mesh, "DG", 0)
 CG = FunctionSpace(mesh, "CG", 1)
 
@@ -105,7 +106,7 @@ q_out = Function(CG, name="Vorticity").project(q)
 u.rename("Velocity")
 D.rename("Depth")
 
-e_tot_0 = assemble(0.5 * inner(u**2, D) * dx + 0.5 * g * (D ** 2) * dx)  # define total energy at each step
+e_tot_0 = assemble(0.5 * inner(u**2, H) * dx + 0.5 * g * (D ** 2) * dx)  # define total energy at each step
 all_e_tot = []
 ens_0 = assemble(q**2 * D * dx)  # define enstrophy at each time step
 all_ens = []
@@ -141,7 +142,7 @@ while t < tmax / Dt - dt1 / 2:
     U.assign((1.0/3.0)*U + (2.0/3.0)*(U2 + dU))
     q = (f - div(perp(u))) / D
     dump()
-    e_tot_t = assemble(0.5 * inner(u, D * u) * dx + 0.5 * g * (D ** 2) * dx)
+    e_tot_t = assemble(0.5 * inner(u**2, H) * dx + 0.5 * g * (D ** 2) * dx)
     all_e_tot.append(e_tot_t / e_tot_0 - 1)
     ens_t = assemble(q**2 * D * dx)
     all_ens.append(ens_t/ens_0 - 1)
@@ -149,7 +150,11 @@ while t < tmax / Dt - dt1 / 2:
     print(ens_t / ens_0 - 1, 'Enstrophy')
     
 
-fig1 = plt.plot(all_e_tot)
+plt.figure()
+plt.xticks([0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
+plt.plot(all_e_tot)
+plt.xlabel('Time/days')
+plt.ylabel('Relative energy diff')
 plt.show()
-fig2 = plt.plot(all_ens)
-plt.show()
+# fig2 = plt.plot(all_ens)
+# plt.show()
