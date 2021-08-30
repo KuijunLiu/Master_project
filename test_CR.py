@@ -1,4 +1,4 @@
-# convergence test, geostrophic balance and conservation of energy
+#  geostrophic balance and conservation of energy
 from firedrake import *
 import matplotlib.pyplot as plt
 from split_initializations import *
