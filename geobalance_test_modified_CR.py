@@ -5,12 +5,12 @@ from split_initializations import *
 # from projector import *
 
 H = 10
-# Dt = 0.0005 #works with n=50
+Dt = 0.001 #works with n=50
 # Dt = 0.00025
-Dt = 0.0005
+
 dt = Constant(Dt)
 
-n = 50
+n = 10
 Lx = 5000  # in km                           # Zonal length
 Ly = 4330  # in km                           # Meridonal length
 
@@ -67,17 +67,17 @@ v2 = TestFunction(BDM)
 u_hat = Function(BDM)
 
 eqn1 = avg(inner(v2 , n_vec) * inner(u_trial , n_vec)) * dS
-eqn2 = avg(inner(v2 , n_vec) * inner(un0 , n_vec)) * dS
+eqn2 = avg(inner(v2 , n_vec) * inner(u , n_vec)) * dS
 
 proj_problem = LinearVariationalProblem(eqn1, eqn2, u_hat)
 params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
 proj_solver = LinearVariationalSolver(proj_problem,
                                        solver_parameters=params)
-proj_solver.solve()
+# proj_solver.solve()
 
 # from IPython import embed; embed()
 
-
+# define a solver for r
 r_trial = TrialFunction(BDM)
 v3 = TestFunction(BDM)
 r = Function(BDM)
@@ -90,7 +90,7 @@ r_problem = LinearVariationalProblem(eqn3, eqn4, r)
 r_solver = LinearVariationalSolver(r_problem,
                                     solver_parameters=params)
 # r_hat = r_solver.solve()
-r_solver.solve()
+# r_solver.solve()
 
 # define velocity and depth increment
 dU_trial = TrialFunction(W)
@@ -146,7 +146,8 @@ ut_trial = TrialFunction(CR)
 v4 = TestFunction(CR)
 ut = Function(CR)
 eqn5 = inner(v4 , ut_trial) * dx
-eqn6 = div(v4) * g * D * dx - inner(v4 , f * perp(u)) * dx
+# eqn6 = div(v4) * g * D * dx - inner(v4 , f * perp(u)) * dx
+eqn6 = div(v4) * g * D * dx - avg(inner(r, n_vec) * inner(v4, n_vec)) * dS
 params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
 ut_problem = LinearVariationalProblem(eqn5, eqn6, ut)
 ut_solver = LinearVariationalSolver(ut_problem,
@@ -187,7 +188,7 @@ def dump():
     global dumpcount
     dumpcount += 1
     if (dumpcount > dumpfreq):
-        ufile.write(u, D, time=t)
+        # ufile.write(u, D, time=t)
         dumpcount -= dumpfreq
 
 
@@ -208,7 +209,7 @@ while t < tmax / Dt - dt1 / 2:
     dump()
     e_tot_t = assemble(0.5 * inner(u, H * u) * dx + 0.5 * g * (D ** 2) * dx)
     all_e_tot.append(e_tot_t / e_tot_0 - 1)
-    geo_t = norm(ut)
+    geo_t = norm(ut, norm_type="L2")
     norm_err.append(geo_t)
     # norm_err_t = abs(Norm(u, D) - Norm0)
     # norm_err.append(norm_err_t)
@@ -224,6 +225,6 @@ plt.figure()
 plt.xticks([0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
 plt.plot(norm_err/norm_err[0])
 plt.xlabel('time/days')
-plt.ylabel('normalized solution of $u_t$')
+plt.ylabel('L2 norm of $u_t$')
 
 plt.show()
