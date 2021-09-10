@@ -1,6 +1,7 @@
 from firedrake import *
 import matplotlib.pyplot as plt
 from split_initializations import *
+import time
 
 H = 10
 Dt = 0.0005
@@ -110,11 +111,12 @@ e_tot_0 = assemble(0.5 * inner(u**2, H) * dx + 0.5 * g * (D ** 2) * dx)  # defin
 all_e_tot = []
 ens_0 = assemble(q**2 * D * dx)  # define enstrophy at each time step
 all_ens = []
+t_array4 = []
 
 name = "lsw_rk"
 ufile = File("output/" + name + ".pvd")
 
-tmax = 4  # days
+tmax = 0.5  # days
 t = 0.
 dt1 = 1
 dumpfreq = 10
@@ -133,13 +135,17 @@ dump()
 
 while t < tmax / Dt - dt1 / 2:
     t += dt1
-    print("t= ", t * Dt)   
+    print("t= ", t * Dt) 
+    time_begin = time.time()  
     uh_solver0.solve()
     U1.assign(U + dU)
     uh_solver1.solve()
     U2.assign(0.75*U + 0.25*(U1 + dU))
     uh_solver2.solve()
     U.assign((1.0/3.0)*U + (2.0/3.0)*(U2 + dU))
+    time_end = time.time()
+    t_run = time_end - time_begin
+    t_array4.append(t_run)
     q = (f - div(perp(u))) / D
     dump()
     e_tot_t = assemble(0.5 * inner(u**2, H) * dx + 0.5 * g * (D ** 2) * dx)
@@ -148,7 +154,18 @@ while t < tmax / Dt - dt1 / 2:
     all_ens.append(ens_t/ens_0 - 1)
     print(e_tot_t / e_tot_0 - 1, 'Energy')
     print(ens_t / ens_0 - 1, 'Enstrophy')
-    
+
+t_array5 = t_array4
+for s in range(len(t_array4)-1):
+    t_array5[s+1] = t_array5[s] + t_array4[s+1]
+
+
+
+plt.figure()
+plt.plot(t_array5)
+plt.xlabel('number of iterations')
+plt.ylabel('time/seconds')
+plt.show()
 
 plt.figure()
 plt.xticks([0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
