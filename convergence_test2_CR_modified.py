@@ -8,12 +8,13 @@ import math
 # from projector import *
 
 H = 10
-Dt = 0.0005
+Dt = 0.0001
 dt = Constant(Dt)
 errlist = []
 uerrors = []
 herrors = []
-N = range(10, 100, 10)
+# N = range(10, 100, 10)
+N = [16, 32, 64, 128]
 for n in N:
         Lx = 5000  # in km                           # Zonal length
         Ly = 4330  # in km                           # Meridonal length
@@ -71,7 +72,7 @@ for n in N:
         u_hat = Function(BDM)
 
         eqn1 = avg(inner(v2 , n_vec) * inner(u_trial , n_vec)) * dS
-        eqn2 = avg(inner(v2 , n_vec) * inner(un0 , n_vec)) * dS
+        eqn2 = avg(inner(v2 , n_vec) * inner(u , n_vec)) * dS
 
         proj_problem = LinearVariationalProblem(eqn1, eqn2, u_hat)
         params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
@@ -145,7 +146,8 @@ for n in N:
         uh_solver2 = LinearVariationalSolver(uh_problem2,
                                             solver_parameters=params)
 
-        tmax = 0.5  # days
+        # tmax = 0.5  # days
+        tmax = 0.1
         t = 0.
         dt1 = 1
         dumpfreq = 10
@@ -167,8 +169,8 @@ for n in N:
         
         norm0 = norm(un0) + norm(Dn0)
 
-        while t < tmax :
-            t += 0.05
+        while t < tmax / Dt - dt1 / 2:
+            t += dt1
             print("t= ", t * Dt)  
             proj_solver.solve() 
             r_solver.solve()
@@ -187,24 +189,32 @@ for n in N:
         herr = errornorm(hlist[-1], Dn0, norm_type="L2")
         # norm1 = norm(ulist[-1]) + norm(hlist[-1])
         # uerrors.append(math.log(uerr))
-        uerrors.append(math.log(uerr/u0norm))
-        herrors.append(math.log(herr/h0norm))
+        uerrors.append((uerr/u0norm))
+        herrors.append((herr/h0norm))
 
 plt.figure()
 # plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8], [60, '', '', 240, '', '', '', 480])
-plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8], [60, '', '', 240, '', '', '', 480, ''])
-plt.plot(uerrors)
+# plt.xticks([0, 1], [180, 240])
+# plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8], [60, '', '', 240, '', '', '', 480, ''])
+plt.xscale('log')
+plt.yscale('log')
+plt.plot(N, uerrors)
 # plt.xlabel('$\sqrt{n_{DOF}}$')
-plt.xlabel('square root of number of DOF')
+plt.xlabel('number of elements in one direction')
+# plt.xlabel('square root of number of DOF')
 plt.ylabel('L2 norm of relative velocity errors')
 # plt.grid(True)
 plt.show()
        
 plt.figure()
 # plt.xticks([0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
-plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8], [60, '', '', 240, '', '', '', 480, ''])
-plt.plot(herrors)
-plt.xlabel('square root of number of DOF')
+# plt.xticks([0, 1], [180, 240])
+# plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8], [60, '', '', 240, '', '', '', 480, ''])
+plt.xscale('log')
+plt.yscale('log')
+plt.plot(N, herrors)
+plt.xlabel('number of elements in one direction')
+# plt.xlabel('square root of number of DOF')
 plt.ylabel('L2 norm of relative depth errors')
 # plt.grid(True)
 plt.show()
