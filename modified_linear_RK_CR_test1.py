@@ -1,6 +1,7 @@
 from firedrake import *
 import matplotlib.pyplot as plt
 from split_initializations import *
+import time
 # from projector import *
 
 H = 10
@@ -65,7 +66,7 @@ v2 = TestFunction(BDM)
 u_hat = Function(BDM)
 
 eqn1 = avg(inner(v2 , n_vec) * inner(u_trial , n_vec)) * dS
-eqn2 = avg(inner(v2 , n_vec) * inner(un0 , n_vec)) * dS
+eqn2 = avg(inner(v2 , n_vec) * inner(u , n_vec)) * dS
 
 proj_problem = LinearVariationalProblem(eqn1, eqn2, u_hat)
 params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
@@ -150,11 +151,12 @@ e_tot_0 = assemble(0.5 * inner(u**2, H) * dx + 0.5 * g * (D ** 2) * dx)  # defin
 all_e_tot = []
 ens_0 = assemble(q**2 * D * dx)  # define enstrophy at each time step
 all_ens = []
+t_array2 = []
 
 name = "lsw_RK_CR_modified_test1"
 ufile = File("output/" + name + ".pvd")
 
-tmax = 4  # days
+tmax = 0.5  # days
 t = 0.
 dt1 = 1
 dumpfreq = 10
@@ -174,22 +176,40 @@ dump()
 while t < tmax / Dt - dt1 / 2:
     t += dt1
     print("t= ", t * Dt)  
+    # time_begin = time.time()
     proj_solver.solve() 
     r_solver.solve()
+    # time_end = time.time()
+    time_begin = time.time()
     uh_solver0.solve()
     U1.assign(U + dU)
     uh_solver1.solve()
     U2.assign(0.75*U + 0.25*(U1 + dU))
     uh_solver2.solve()
     U.assign((1.0/3.0)*U + (2.0/3.0)*(U2 + dU))
+    time_end = time.time()
+    t_run= time_end - time_begin
+    t_array2.append(t_run)
     q = (f - div(perp(u))) / D
     dump()
     e_tot_t = assemble(0.5 * inner(u**2, H) * dx + 0.5 * g * (D ** 2) * dx)
-    all_e_tot.append(e_tot_t / e_tot_0 - 1)
+    all_e_tot.append(abs(e_tot_t / e_tot_0 - 1))
     ens_t = assemble(q**2 * D * dx)
     all_ens.append(ens_t/ens_0 - 1)
-    print(e_tot_t / e_tot_0 - 1, 'Energy')
-    print(ens_t / ens_0 - 1, 'Enstrophy')
+    print(abs(e_tot_t / e_tot_0 - 1), 'Energy')
+    # print(ens_t / ens_0 - 1, 'Enstrophy')
+t_array3 = t_array2
+# t_array3 = t_array2
+for s in range(len(t_array2)-1):
+    t_array3[s+1] = t_array3[s] + t_array2[s+1]
+
+
+
+plt.figure()
+plt.plot(t_array3)
+plt.xlabel('number of iterations')
+plt.ylabel('time/seconds')
+plt.show()
     
 
 plt.figure()
