@@ -7,9 +7,11 @@ import math
 
 H = 10
 Dt = 0.0005
+# Dt = 0.001
 dt = Constant(Dt)
 
-n = 50
+n = 10
+# n = 10
 Lx = 5000  # in km                           # Zonal length
 Ly = 4330  # in km                           # Meridonal length
 
@@ -106,11 +108,11 @@ uh_solver2 = LinearVariationalSolver(uh_problem2,
                                        solver_parameters=params)
 
 # check geostrophic balance here, calculate u_t
-ut_trial = TrialFunction(CR)
-v4 = TestFunction(CR)
-ut = Function(CR)
+ut_trial = TrialFunction(RT)
+v4 = TestFunction(RT)
+ut = Function(RT)
 eqn5 = inner(v4 , ut_trial) * dx
-eqn6 = Dt * (div(v4) * g * D * dx - inner(v4 , f * perp(u)) * dx)
+eqn6 = (div(v4) * g * D * dx - inner(v4 , f * perp(u)) * dx)
 params = {'ksp_type': 'preonly', 'pc_type': 'bjacobi', 'sub_pc_type': 'ilu'}
 ut_problem = LinearVariationalProblem(eqn5, eqn6, ut)
 ut_solver = LinearVariationalSolver(ut_problem,
@@ -121,7 +123,8 @@ q_out = Function(CG, name="Vorticity").project(q)
 u.rename("Velocity")
 D.rename("Depth")
 
-e_tot_0 = assemble(0.5 * inner(un0, H * un0) * dx + 0.5 * g * (Dn0**2) * dx)  # define total energy at each step
+# e_tot_0 = assemble(0.5 * inner(un0, H * un0) * dx + 0.5 * g * (Dn0**2) * dx)  # define total energy at each step
+e_tot_0 = assemble(0.5 * inner(un0, un0) * H * dx + 0.5 * g * (Dn0 * Dn0) * dx)  # define total energy at each step
 all_e_tot = []
 ens_0 = assemble(q**2 * D * dx)  # define enstrophy at each time step
 all_ens = []
@@ -130,18 +133,19 @@ all_ens = []
 # ufile = File("output/" + name + ".pvd")
 
 tmax = 4  # days
+# tmax = 100
 t = 0.
 dt1 = 1
 dumpfreq = 10
 dumpcount = dumpfreq
 
 norm_err = []
-norm_err2 = []
+# norm_err2 = []
 # uerrors = []
 # herrors = []
 # u0norm = norm(un0, norm_type="L2")
 # h0norm = norm(Dn0, norm_type="L2")
-norm0 = norm(un0) + norm(Dn0)
+# norm0 = norm(un0) + norm(Dn0)
 
 
 def dump():
@@ -173,13 +177,16 @@ while t < tmax / Dt - dt1 / 2:
     # uerrors.append(uerr)
     # herrors.append(herr)
     # energy conservation
-    e_tot_t = assemble(0.5 * inner(u, H * u) * dx + 0.5 * g * (D**2) * dx)
-    all_e_tot.append(e_tot_t / e_tot_0 - 1)
+    # e_tot_t = assemble(0.5 * inner(u, H * u) * dx + 0.5 * g * (D**2) * dx)
+    e_tot_t = assemble(0.5 * inner(u, u) * H * dx + 0.5 * g * (D * D) * dx)
+
+    all_e_tot.append(abs(e_tot_t / e_tot_0 - 1))
     #geo_balance test
-    geo_t = norm(ut)
+    geo_t = norm(ut, norm_type="L2")
+    # geo_t = norm(f * perp(u) + g * grad(D))
     norm_err.append(geo_t)
-    norm1 = norm(u) + norm(D)
-    norm_err2.append(norm1 - norm0)
+    # norm1 = norm(u) + norm(D)
+    # norm_err2.append(norm1 - norm0)
     # norm_err_t = abs(Norm(u, D) - Norm0)
     # norm_err.append(norm_err_t)
     print(e_tot_t / e_tot_0 - 1, 'Energy')
@@ -193,19 +200,20 @@ plt.ylabel("total energy")
 
 plt.figure()
 plt.xticks([0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
-plt.plot(norm_err/norm_err[0]-1)
+# plt.plot(norm_err/norm_err[0]-1)
+plt.plot(norm_err)
 plt.xlabel('time/days')
-plt.ylabel('normalized solution of $u_t$')
+plt.ylabel('numerical solution of $u_t$')
 
 plt.show()
 
-plt.figure()
-plt.xticks([0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
-plt.plot(norm_err2)
-plt.xlabel('time/days')
-plt.ylabel('norm error')
+# plt.figure()
+# plt.xticks([0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
+# plt.plot(norm_err2)
+# plt.xlabel('time/days')
+# plt.ylabel('norm error')
 
-plt.show()
+# plt.show()
 
 
 #plot u error and h error
