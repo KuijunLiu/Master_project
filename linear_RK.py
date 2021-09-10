@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 # import numpy as np
 from split_initializations import *
 import math
+import time
 
 H = 10
 Dt = 0.0005
@@ -111,11 +112,12 @@ e_tot_0 = assemble(0.5 * inner(u**2, H) * dx + 0.5 * g * (D ** 2) * dx)  # defin
 all_e_tot = []
 ens_0 = assemble(q**2 * D * dx)  # define enstrophy at each time step
 all_ens = []
+t_array = []
 
 name = "lsw_rk_BDM"
 ufile = File("output/" + name + ".pvd")
 
-tmax = 4  # days
+tmax = 0.5 # days
 t = 0.
 dt1 = 1
 dumpfreq = 10
@@ -134,13 +136,17 @@ dump()
 
 while t < tmax / Dt - dt1 / 2:
     t += dt1
-    print("t= ", t * Dt)    
+    print("t= ", t * Dt)   
+    time_begin = time.time()
     uh_solver0.solve()
     U1.assign(U + dU)
     uh_solver1.solve()
     U2.assign(0.75*U + 0.25*(U1 + dU))
     uh_solver2.solve()
     U.assign((1.0/3.0)*U + (2.0/3.0)*(U2 + dU))
+    time_end = time.time()
+    t_run = time_end - time_begin
+    t_array.append(t_run)
     q = (f - div(perp(u))) / D
     dump()
     e_tot_t = assemble(0.5 * inner(u**2, H) * dx + 0.5 * g * (D ** 2) * dx)
@@ -150,6 +156,26 @@ while t < tmax / Dt - dt1 / 2:
     # all_ens.append(ens_t/ens_0 - 1)
     print(e_tot_t / e_tot_0 - 1, 'Energy')
     # print(ens_t / ens_0 - 1, 'Enstrophy')
+
+t_array1 = t_array
+for s in range(len(t_array)-1):
+    t_array1[s+1] = t_array1[s] + t_array[s+1]
+
+
+
+plt.figure()
+plt.plot(t_array1)
+plt.xlabel('number of iterations')
+plt.ylabel('time/seconds')
+plt.show()
+
+# plt.figure()
+# plt.plot(t_array)
+# plt.xlabel('number of iterations')
+# plt.ylabel('time/seconds')
+# plt.show()
+
+
 
 plt.figure()
 # ax = fig.add_subplot(1,1,1)  
