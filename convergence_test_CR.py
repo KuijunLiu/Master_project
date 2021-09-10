@@ -4,13 +4,14 @@ from split_initializations import *
 import math
 
 H = 10
-Dt = 0.0005
+Dt = 0.0001
 dt = Constant(Dt)
 
 errlist = []
 uerrors = []
 herrors = []
-N = range(10, 90, 10)
+N = [16, 32, 64, 128]
+# N = range(10, 50, 10)
 for n in N:
         Lx = 5000  # in km                           # Zonal length
         Ly = 4330  # in km                           # Meridonal length
@@ -119,7 +120,7 @@ for n in N:
         # name = "lsw_rk"
         # ufile = File("output/" + name + ".pvd")
 
-        tmax = 0.5  # days
+        tmax = 0.1  # days
         t = 0.
         dt1 = 1
         dumpfreq = 10
@@ -157,23 +158,31 @@ for n in N:
         herr = errornorm(hlist[-1], Dn0, norm_type="L2")
         # norm1 = norm(ulist[-1]) + norm(hlist[-1])
         # uerrors.append(math.log(uerr))
-        uerrors.append(math.log(uerr/u0norm))
-        herrors.append(math.log(herr/h0norm))
+        uerrors.append((uerr/u0norm))
+        herrors.append((herr/h0norm))
 plt.figure()
 # plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8], [60, '', '', 240, '', '', '', 480])
-plt.xticks([0, 1, 2, 3, 4, 5, 6, 7], [60, '', '', 240, '', '', '', 480])
-plt.plot(uerrors)
+# plt.xticks([0, 1, 2, 3, 4, 5, 6, 7], [60, '', '', 240, '', '', '', 480])
+# plt.xticks([0, 1], [180, 240])
+plt.yscale('log')
+plt.xscale('log')
+plt.plot(N, uerrors)
 # plt.xlabel('$\sqrt{n_{DOF}}$')
-plt.xlabel('square root of number of DOF')
+plt.xlabel('number of elements in one direction')
+# plt.xlabel('square root of number of DOF')
 plt.ylabel('L2 norm of relative velocity errors')
 # plt.grid(True)
 plt.show()
        
 plt.figure()
 # plt.xticks([0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
-plt.xticks([0, 1, 2, 3, 4, 5, 6, 7], [60, '', '', 240, '', '', '', 480])
-plt.plot(herrors)
-plt.xlabel('square root of number of DOF')
+# plt.xticks([0, 1, 2, 3, 4, 5, 6, 7], [60, '', '', 240, '', '', '', 480])
+# plt.xticks([0, 1], [180, 240])
+plt.yscale('log')
+plt.xscale('log')
+plt.plot(N, herrors)
+plt.xlabel('number of elements in one direction')
+# plt.xlabel('square root of number of DOF')
 plt.ylabel('L2 norm of relative depth errors')
 # plt.grid(True)
 plt.show()
