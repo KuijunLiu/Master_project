@@ -7,7 +7,7 @@ H = 10
 Dt = 0.0005
 dt = Constant(Dt)
 
-n = 50
+n = 20
 Lx = 5000  # in km                           # Zonal length
 Ly = 4330  # in km                           # Meridonal length
 
@@ -162,7 +162,7 @@ while t < tmax / Dt - dt1 / 2:
     dump()
     e_tot_t = assemble(0.5 * inner(u**2, H) * dx + 0.5 * g * (D ** 2) * dx)
     all_e_tot.append(e_tot_t / e_tot_0 - 1)
-    geo_t = norm(ut)
+    geo_t = norm(ut, norm_type="L2")
     norm_err.append(geo_t)
     norm1 = norm(u) + norm(D)
     norm_err2.append(norm1 - norm0)
@@ -174,9 +174,9 @@ while t < tmax / Dt - dt1 / 2:
 
 plt.figure()
 plt.xticks([0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
-plt.plot(norm_err/norm_err[0]-1)
+plt.plot(norm_err)
 plt.xlabel('time/days')
-plt.ylabel('normalized solution of $u_t$')
+plt.ylabel('L2 norm of $u_t$')
 
 plt.show()
 
